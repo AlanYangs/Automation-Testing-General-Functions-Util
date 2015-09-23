@@ -1,0 +1,232 @@
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+		<title>Automation Project Scheduler</title>
+	<style  type="text/css">
+		body{
+			font-family:Arial;
+			font-size:14px;
+			margin:0px;
+			border:0px;
+			padding:0px;			
+		}
+		#header{
+			background-color:#0A3F6A;
+			padding:0px 0px 0px 14px;
+			border-style:groove;
+			border-left-color:#0A3F6A;
+			border-right-color:#0A3F6A;
+			border-top-color:#0A3F6A;
+			border-bottom-color:#ff0000;
+		}
+		.info{
+			color:red;
+			width:100%;
+			height:20px;
+			background:none;
+			border:1px;
+			border-bottom-style:none;
+			border-top-style:none;
+			border-left-style:none;
+			border-right-style:none;
+		}
+		.editText{
+			margin: 0;
+			padding: 2px 4px;
+			overflow: visible;
+			border: 1px solid #b7b7b7;
+			border-radius: 3px;
+			background:#ffffff;
+		}
+	</style>
+	</head>
+	<body>
+		<div id="header"><br><h1><font color=white>Project Scheduler</font></h1></div>
+		<div style="padding:0px 0px 0px 14px;">
+			<input class="info" id="info" type="text">
+			<p align=left>
+			<font color=blue size=4>If you want to copy your project files to location.</font><p>
+			<div style="cursor:hand" onclick="isHidden('div1')"><font color="#b7b7b7" size=4>+ </font>Click here to copy project files</div>
+			<div id="div1" style="display:none;width:600px;padding:4px 0px 4px 14px;border:1px solid #b7b7b7">
+				<table border=0 width="600px">
+					<tbody>
+						<tr>
+							<td style="font-size:14px;width:150px">
+								Source Project Folder:
+							</td>
+							<td width="200px">
+								<input id="sPath" class="editText" size="30"/>
+							</td>
+							<td width="100px">
+								<input onclick="browseFolder(sPath)" value="Browse…" type="button"/>
+							</td>
+							<td rowspan="2">
+								<div style="height:42px; width:1px; border-left:1px #b7b7b7 solid"></div>
+							</td>
+							<td rowspan="2">
+								<input id="copy" value="Copy" type="button"/>
+							</td>
+						</tr>
+						<tr>
+							<td style="font-size:14px;width:150px">
+								Target Path:
+							</td>
+							<td width="200px">
+								<input id="tPath" class="editText" size="30"/>
+							</td>
+							<td width="100px">
+								<input onclick="browseFolder(tPath)" value="Browse…" type="button"/>
+							</td>
+						</tr>
+					</tbody>
+				</table>
+			</div>
+			<p align=left>
+			<font color=blue size=4>Select the project path that you need to run.</font>
+			<p>Project Path:<input id=proPath type=file size=19><br>
+			<p align=left>
+			<font color=blue size=4>Input the execution time(24H) that you expect to run, such as 19:30.</font>
+			<p>Expected Time:<input class="editText" id=execTime type=text size=30 onfocus='this.select();'value='19:30'><br>
+			<p align=left>
+			<font color=blue size=4>If checked it, the execution application is TestExecute.exe, otherwise TestComplete.exe.</font>
+			<p><input id="chkIsClient" type="checkbox"  size="30"><label for="chkIsClient">Execute on Client PC</label></p>
+			<br><br>
+			<input id="confirm" type="button" value="Confirm">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			<input id="cancel" type="button" value="Cancel">
+		</div>
+		
+		<script language="javascript">	
+			function isHidden(oDiv){
+			  var vDiv = document.getElementById(oDiv);
+			  vDiv.style.display = (vDiv.style.display == 'none')?'block':'none';
+			}						
+			
+			var ExecuteType = "TestComplete.exe";//default value
+			var chkIsClient = document.getElementById("chkIsClient");
+			chkIsClient.onchange = function(){
+				if(chkIsClient.checked){
+					ExecuteType = "TestExecute.exe";
+				}else{
+					ExecuteType = "TestComplete.exe";
+				}	
+			}
+			
+			var btnCopy = document.getElementById("copy");
+			btnCopy.onclick = function(){
+				if(document.getElementById("sPath").value != "" && document.getElementById("tPath").value != ""){
+					document.getElementById("sPath").select();
+					var proSource = document.selection.createRange().text;
+					document.getElementById("tPath").select();
+					var proTarget = document.selection.createRange().text;
+					var fs = new ActiveXObject("Scripting.FileSystemObject");
+					if(fs.FileExists(proSource) && fs.FileExists(proTarget)){
+						fs.CopyFolder(proSource,proTarget)						
+					}else{
+						document.getElementById('info').value = "The path is invalid,please check it."
+					}
+				}else{
+						document.getElementById('info').value = "The path can not be null."
+				}
+			}
+			
+			var btnCancel = document.getElementById("cancel");
+
+			btnCancel.onclick = function(){
+				window.opener=null;
+				window.close();
+			}
+			
+			var btnConfirm = document.getElementById("confirm");
+			var txtInfo = document.getElementById('info');
+			var projectPath = "";
+			
+			btnConfirm.onclick = function(){
+				var path = document.getElementById('proPath');
+				if(path.value !=""){
+					path.select();
+					projectPath = document.selection.createRange().text;
+					var fs = new ActiveXObject("Scripting.FileSystemObject");
+					if(fs.FileExists(projectPath)){
+						var txtTime = document.getElementById('execTime');
+						if (txtTime.value != ""&& (txtTime.value).indexOf(":")!=-1) {
+							var executeTime = txtTime.value;
+							var executeHour = parseInt(executeTime.split(":")[0]);
+							var executeMinute = parseInt(executeTime.split(":")[1]);
+							var date = new Date();
+							var currentHour = parseInt(date.getHours());
+							var currentMinute = parseInt(date.getMinutes());
+							var interval = 0;
+							if((executeHour*60 + executeMinute) < (currentHour*60 + currentMinute)){ //second day;
+								interval = (executeHour + 24 - currentHour)*60 + executeMinute - currentMinute; //m
+							}else{
+								interval = (executeHour - currentHour)*60 + executeMinute - currentMinute ;//m
+							}
+
+							if(interval>0){//wait to run
+								btnConfirm.disabled = true;
+								waitToRun(interval);
+							}else if(interval == 0){//run at once
+								runProject();
+							}else{
+								txtInfo.value = "The expected execution time is not less than current time.";
+							}							
+						}else{
+							txtInfo.value = "The format of Execution Time is not correct, please input again.";
+						}
+						
+					}else{
+						txtInfo.value = "The Project Path is invalid, check it please.";
+					}
+					
+				}else{
+					txtInfo.value = "The Project Path can not be null.";
+				}
+			}	
+			
+			function browseFolder(path) {
+				try {
+					var Message = "Select folder path:"; //选择框提示信息
+					var Shell = new ActiveXObject("Shell.Application");
+					//var Folder = Shell.BrowseForFolder(0, Message, 64, 17); //起始目录为：我的电脑
+					var Folder = Shell.BrowseForFolder(0, Message, 0); //起始目录为：桌面
+					if (Folder != null) {
+						Folder = Folder.items(); // 返回 FolderItems 对象
+						Folder = Folder.item(); // 返回 Folderitem 对象
+						Folder = Folder.Path; // 返回路径
+						if (Folder.charAt(Folder.length - 1) != "\\") {
+							Folder = Folder + "\\";
+						}
+						document.getElementById(path).value = Folder;
+						return Folder;
+					}
+				}
+				catch (e) {
+					txtInfo.value = e.message;
+				}
+			}
+			
+			function waitToRun(interval){
+				if(interval > 0){
+					txtInfo.value= "Need to wait " + interval + " minutes.";					
+					setTimeout(function(){interval--;waitToRun(interval);},60000);
+				}else{
+					runProject();
+				}
+			}
+			
+			function runProject(){
+				var WshShell = new ActiveXObject("WScript.Shell");
+				var strCommand = "%comspec% /c start "+ ExecuteType + " /r /e \"" + projectPath + "\"";
+				txtInfo.value = strCommand;
+				try{
+					WshShell.Run(strCommand,true);
+					txtInfo.value = "Project is running now.";
+				}catch(e){
+					WshShell.sendkeys("{f5}"); //refresh
+					txtInfo.value = e.message;									
+				}																
+				WshShell = null;
+			}
+		</script>
+	</body>
+</html>
