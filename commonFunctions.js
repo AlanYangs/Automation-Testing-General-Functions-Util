@@ -376,6 +376,7 @@ function HashMap(){
             return this.arrValue[index];
         }
     }
+    /*  you can expand more functions when you needed  */
 }
 
 
